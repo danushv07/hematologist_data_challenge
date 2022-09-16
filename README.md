@@ -1,5 +1,8 @@
 # Hematology_data_challenge
 
+This repo is for the **Help a hematologist out** data challenge. The dataset and the information is available [here](https://helmholtz-data-challenges.de/web/challenges/challenge-page/93/overview)
+
+The dataset consists of structures that show cyclic structure. For this project equivariant networks will be designed.
 
 
 ## Getting started
