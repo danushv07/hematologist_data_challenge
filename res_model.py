@@ -116,3 +116,86 @@ class EqRes(torch.nn.Module):
         x = self.linear(x)
         
         return x
+    
+class EqSimple(torch.nn.Module):
+    def __init__(self, n_rot, n_filter, n_class, flip=False):
+        
+        super().__init__()
+        self.n_theta = n_rot
+        self.flip = flip
+        self.n_filter = n_filter
+        self.num_class = n_class
+    
+    
+        if self.flip:
+            if n_rot==1:
+                self.gspace = gspaces.Flip2dOnR2()
+            else:
+                self.gspace = gspaces.FlipRot2dOnR2(self.n_theta)
+        else:
+            if n_rot==1:
+                self.gspace = gspaces.TrivialOnR2()
+            else:
+                self.gspace = gspaces.Rot2dOnR2(self.n_theta)
+
+        self.in_type = create_field(self.gspace, n_filters=3, rep_type=False)       
+        out_type = create_field(self.gspace, n_filters=self.n_filter) #64
+
+        self.lifting = nn.SequentialModule(
+                nn.R2Conv(self.in_type, out_type, kernel_size=5, padding=2, stride=2, bias=False),
+                nn.InnerBatchNorm(out_type),
+                nn.ELU(out_type, inplace=True)
+            )
+        
+        self.block1 = EqConvBlock(self.n_filter, self.n_filter, 3,1,[1,1], self.gspace, b_norm=True,
+                                 act_func='e')
+        self.pblock1 = Pool(self.n_filter, self.gspace, k_size=2)
+        self.n_filter = len(self.pblock1.out_type)
+        
+        self.block2 = EqConvBlock(self.n_filter, self.n_filter*2, 3,1,[1,1], self.gspace, b_norm=True,
+                                 act_func='e')
+        self.pblock2 = Pool(self.n_filter*2, self.gspace, k_size=2)
+        self.n_filter = len(self.pblock2.out_type)
+        
+        self.block3 = EqConvBlock(self.n_filter, self.n_filter*2, 3,1,[1,1], self.gspace, b_norm=True,
+                                 act_func='e')
+        self.pblock3 = Pool(self.n_filter*2, self.gspace, k_size=2)
+        self.n_filter = len(self.pblock3.out_type)
+        
+        self.block4 = EqConvBlock(self.n_filter, self.n_filter*2, 3,1,[1,1], self.gspace, b_norm=True,
+                                 act_func='e')
+        self.pblock4 = Pool(self.n_filter*2, self.gspace, k_size=2)
+        self.n_filter = len(self.pblock4.out_type)
+        
+        self.project = nn.GroupPooling(create_field(self.gspace, self.n_filter))
+        self.linear = torch.nn.Linear(len(self.project.out_type), self.num_class)
+    
+    def forward(self, x):
+        x = nn.GeometricTensor(x, self.in_type)
+        
+        x = self.lifting(x)
+        
+        
+        x = self.block1(x)
+        x = self.pblock1(x)
+        
+        x = self.block2(x)
+        x = self.pblock2(x)
+        
+        x = self.block3(x)
+        x = self.pblock3(x)
+        
+        x = self.block4(x)
+        x = self.pblock4(x)
+        
+        x = self.project(x)
+        
+        x = x.tensor
+        b,c,w,h = x.shape
+        
+        x = F.avg_pool2d(x, (w,h))
+        
+        x = x.reshape(x.shape[0], -1)
+        x = self.linear(x)
+        
+        return x
