@@ -37,7 +37,7 @@ def create_field(grp_space, n_filters=1, rep_type=True):
     
 def EqConv(in_field, out_field, k_size, pad, stride, grp_space, f_cutoff=.8*np.pi, 
             b_norm=False, init=True, in_rep=True, out_rep=True, act=False,
-          act_func='r'):
+          act_func='r', bias=False):
     """
     The equi. conv. operation
     - can be used for designing blocks for other model arch.
@@ -77,7 +77,7 @@ def EqConv(in_field, out_field, k_size, pad, stride, grp_space, f_cutoff=.8*np.p
     in_type = create_field(grp_space, in_field, in_rep)
     out_type = create_field(grp_space, out_field, out_rep)
     layer = nn.SequentialModule(nn.R2Conv(in_type, out_type, kernel_size=k_size, padding=pad, 
-                                stride=stride, frequencies_cutoff=f_cutoff, initialize=init))
+                                stride=stride, frequencies_cutoff=f_cutoff, initialize=init, bias=bias))
     if b_norm:
         layer.add_module("bn", nn.InnerBatchNorm(out_type))
     if act:
@@ -90,7 +90,7 @@ def EqConv(in_field, out_field, k_size, pad, stride, grp_space, f_cutoff=.8*np.p
 
 
 def EqConvBlock(in_field, out_field, k_size, pad, stride, grp_space, f_cutoff=.8*np.pi, 
-            b_norm=False, res=False, act_func='r'):
+            b_norm=False, res=False, act_func='r', change_stride=False):
     """
     The equi. conv. block for the U-Net.
     
@@ -132,19 +132,20 @@ def EqConvBlock(in_field, out_field, k_size, pad, stride, grp_space, f_cutoff=.8
     # TODO: include option for other activation
     for i in range(2):
         layers.append(nn.R2Conv(in_type, out_type, kernel_size=k_size, padding=pad, 
-                                stride=stride, frequencies_cutoff=f_cutoff))
+                                stride=stride[i], frequencies_cutoff=f_cutoff))
         if(b_norm):
             layers.append(nn.InnerBatchNorm(out_type))
         #if(res and i==0):
         #    layers.append(nn.ReLU(out_type))
         #if not res:
-        if act_func == 'r':
-            act_layer = nn.ReLU(out_type)
-        elif act_func == 'e':
-            act_layer = nn.ELU(out_type)
-        
-        #ayers.append(nn.ReLU(out_type))
-        layers.append(act_layer)
+        if not i==1:
+            if act_func == 'r':
+                act_layer = nn.ReLU(out_type)
+            elif act_func == 'e':
+                act_layer = nn.ELU(out_type)
+
+            #ayers.append(nn.ReLU(out_type))
+            layers.append(act_layer)
         in_type = out_type
     return nn.SequentialModule(*layers)
 
