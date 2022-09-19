@@ -5,11 +5,11 @@ dependencies:
   - imageio
   - matplotlib
   - scikit-learn
-  - pytorch
-  - torchvision
-  - cudatoolkit=10.2
+  - cudatoolkit=11.3
   - pandas
   - click
   - pip
   - pip:
       - e2cnn
+      - torch==1.11.0
+      - torchvision==0.12.0
