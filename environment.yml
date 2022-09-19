@@ -9,3 +9,7 @@ dependencies:
   - torchvision
   - cudatoolkit=10.2
   - pandas
+  - click
+  - pip
+  - pip:
+      - e2cnn
