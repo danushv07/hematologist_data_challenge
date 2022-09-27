@@ -1,5 +1,6 @@
 """
 This file contains the training loop of the residual models
+Author: Danush Kumar Venkatesh
 """
 import os
 from time import sleep
@@ -18,7 +19,7 @@ import matplotlib.image as mpimg
 
 import sklearn
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, plot_confusion_matrix, matthews_corrcoef, classification_report,confusion_matrix, accuracy_score, balanced_accuracy_score, cohen_kappa_score, f1_score,  precision_score, recall_score
+from sklearn.metrics import accuracy_score, f1_score
 
 import torch
 import torch.nn as nn
@@ -35,35 +36,38 @@ from models import *
 from data_load import *
 
 @click.command()
-@click.option('-nr', 'rots', type=int, 
+@click.option('-nr', '--n_rotation', type=int, 
               help="no. of rotations")
-@click.option('-nf', 'filters', type=int, 
+@click.option('-nf', '--n_filters', type=int, 
               help="no. of filters")
-@click.option('-rf', 'flip', type=bool, 
-              help="the flag for DN")
-@click.option('-ml', 'mdl_path', type=str, 
-              help="the model save path")
-@click.option('-mo', 'mdl', type=str, 
+@click.option('-rf', '--flip', type=bool, 
+              help="the flag to turn on dihedral group")
+@click.option('-nc', '--num_class', type=int, default=11, 
+              help="the number of classes in the dataset")
+@click.option('-sp', '--save_path', type=str, 
+              help="the path to save the file")
+@click.option('-mt', '--model_type', type=str, default="res",
+              help="the type of model to run")
+@click.option('-ep', '--epoch', type=int, default=10, 
               help="the option for model")
-@click.option('-ep', 'epoch', type=int, default=10, 
-              help="the option for model")
-@click.option('-d1', 'dpath1', type=str, 
+@click.option('-ap', '--ace_path', type=str, 
               help="the path to the Acevedo dataset")
-@click.option('-d2', 'dpath2', type=str, 
+@click.option('-mp', '--mat_path', type=str, 
               help="the path to the Matek dataset")
-@click.option('-d3', 'dpath3', type=str, 
-              help="the path to the WBC1 dataset")
-@click.option('-tf', 'test_frac', type=float, default=0.2,
+@click.option('-tf', '--test_frac', type=float, default=0.2,
               help="the percentage of data for the test set")
-@click.option('-vf', 'val_frac', type=float, default=0.125,
+@click.option('-vf', '--val_frac', type=float, default=0.125,
               help="the percentage of data for the validation set")
-def main(rots, filters, flip, mdl_path, mdl, epoch, dpath1, dpath2, 
-         dpath3, test_frac, val_frac):
-    
+@click.option('-bc', '--batch_size', type=int, default=32,
+              help="the batch size of the dataloader")
+@click.option('-lr', '--learn_rate', type=float, default=1e-5,
+              help="the learning rate of the training function")
+def main(n_rotation, n_filters, flip, num_class, save_path, model_type, epoch, 
+         ace_path, mat_path, test_frac, val_frac, batch_size, learn_rate):
+
     data_path = {
-            "Ace_20": dpath1, # Acevedo_20 Dataset
-            "Mat_19": dpath2, # Matek_19 Dataset
-            "WBC1": dpath3 # WBC1 dataset
+            "Ace_20": ace_path, # Acevedo_20 Dataset
+            "Mat_19": mat_path, # Matek_19 Dataset
         }
     
     dataframe, train_index, test_index, val_index = get_indexes(test_frac, val_frac)
@@ -92,22 +96,22 @@ def main(rots, filters, flip, mdl_path, mdl, epoch, dpath1, dpath2,
 
     
     train_loader = DataLoader(
-        train_dataset, batch_size=bs, shuffle=True)
+        train_dataset, batch_size=batch_size, shuffle=True)
     valid_loader = DataLoader(
-        val_dataset, batch_size=bs, shuffle=True)
+        val_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(
-        test_dataset, batch_size=bs, shuffle=False)
+        test_dataset, batch_size=batch_size, shuffle=False)
 
     epochs=epoch # max number of epochs
-    lr=1e-5 # learning rate
+    lr=learn_rate # learning rate
     device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    num_classes = 11
-    if mdl=='res':
-        model = EqRes(n_rot=rots, n_filter=filters, n_class=num_classes,
+    num_classes = num_class
+    if model_type=='res':
+        model = EqRes(n_rot=n_rotation, n_filter=n_filters, n_class=num_classes,
                      flip=flip)
     else:
-        model = EqSimple(n_rot=rots, n_filter=filters, n_class=num_classes,
+        model = EqSimple(n_rot=n_rotation, n_filter=n_filters, n_class=num_classes,
                         flip=flip)
 
     model.to(device)
@@ -118,7 +122,7 @@ def main(rots, filters, flip, mdl_path, mdl, epoch, dpath1, dpath2,
                                                 steps_per_epoch=len(train_loader), 
                                                epochs=epochs+1, cycle_momentum=False)
 
-    model_save_path=mdl_path #path where model with best f1_macro should be stored
+    model_save_path=save_path #path where model with best f1_macro should be stored
 
     #running variables
     epoch=0
