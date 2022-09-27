@@ -24,7 +24,7 @@ python3 -m pip install -r requirements.txt
 cd src/
 python train.py --n_rotation 8 --n_filters 32 --flip True --num_class 11 --save_path path/to/save/model --model_type "res" --epoch 10 --ace_path path/to/acevedo --mat_path path/to/matek 
 ```
-To run inference
+- To run inference
 ```bash
 python eval.py --n_rotation 8 --n_filters 32 --flip True --num_class 11 --file_path path/to/saved_model --save_path path/to/save_submission 
 ```
@@ -39,3 +39,4 @@ conda env create -f environment.yml
 For questions kindly open an issue.
 
 ## Acknowledgement
+This work is supported by the Helmholtz Association Initiative and Networking Fund under the Helmholtz AI platform grant.
