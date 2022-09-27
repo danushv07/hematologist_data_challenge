@@ -48,6 +48,45 @@ label_map_all = {
         'monocyte': 9,
         'lymphocyte_typical': 10
     }
+label_map_all = {
+        'basophil': 0,
+        'eosinophil': 1,
+        'erythroblast': 2,
+        'myeloblast' : 3,
+        'promyelocyte': 4,
+        'myelocyte': 5,
+        'metamyelocyte': 6,
+        'neutrophil_banded': 7,
+        'neutrophil_segmented': 8,
+        'monocyte': 9,
+        'lymphocyte_typical': 10
+    }
+label_map_reverse = {
+        0: 'basophil',
+        1: 'eosinophil',
+        2: 'erythroblast',
+        3: 'myeloblast',
+        4: 'promyelocyte',
+        5: 'myelocyte',
+        6: 'metamyelocyte',
+        7: 'neutrophil_banded',
+        8: 'neutrophil_segmented',
+        9: 'monocyte',
+        10: 'lymphocyte_typical'
+    }
+label_list_all = [
+        'basophil',
+        'eosinophil',
+        'erythroblast',
+        'myeloblast',
+        'promyelocyte',
+        'myelocyte',
+        'metamyelocyte',
+        'neutrophil_banded',
+        'neutrophil_segmented',
+        'monocyte',
+        'lymphocyte_typical'
+]
 # The unlabeled WBC dataset gets the classname 'Data-Val' for every image
 
 label_map_pred = {

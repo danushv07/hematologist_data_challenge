@@ -34,18 +34,8 @@ import click
 from models import *
 from data_load import *
 
-# the file path to the saved model should be specified
-device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = EqRes(n_rot=12, n_filter=32, n_class=11, flip=False)
-model.to(device)
-f_path='/bigdata/haicu/venkat31/hemat/' 
-model.load_state_dict(torch.load(f_path+'theta12_filter32_caug'))
-
-def prediction(metadata, 
+def prediction(metadata, model,
                source_domains=['Ace_20', 'Mat_19'], label_map=label_map_all):
-
-
-
     pred_dataset = DatasetGenerator(metadata, 
                                  reshape_size=resize, 
                                  dataset = source_domains,
@@ -58,6 +48,7 @@ def prediction(metadata,
                              shuffle=False, 
                              num_workers=0
                             )
+    device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n=len(pred_loader)
     model.eval()
     preds=torch.tensor([], dtype=int)
@@ -81,20 +72,49 @@ def prediction(metadata,
     y_true=metadata['label']
     return y_true, y_pred, preds
 
-metadata = pd.read_csv('./metadata.csv')
-wbc_metadata=metadata.loc[metadata['dataset']=='WBC1'].reset_index(drop = True)
+@click.command()
+@click.option('-nr', '--n_rotation', type=int, 
+              help="no. of rotations")
+@click.option('-nf', '--n_filters', type=int, 
+              help="no. of filters")
+@click.option('-rf', '--flip', type=bool, 
+              help="the flag to turn on dihedral group")
+@click.option('-nc', '--num_class', type=int, default=11, 
+              help="the number of classes in the dataset")
+@click.option('-fp', '--file_path', type=str, 
+              help="the path to the saved model")
+@click.option('-sp', '--save_path', type=str, 
+              help="the path/file name for the submission file")
+def create_submisssion(n_rotation, n_filters, flip, num_class,
+                      file_path, save_path):
+    
+    metadata = pd.read_csv('./metadata.csv')
+    wbc_metadata=metadata.loc[metadata['dataset']=='WBC1'].reset_index(drop = True)
+    
+    # the file path to the saved model should be specified
+    device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+    model = EqRes(n_rot=n_rotation, n_filter=n_filters, n_class=num_class, 
+                  flip=flip)
+    model.to(device)
+     
+    model.load_state_dict(torch.load(file_path))
 
-label_map_pred = {
-        'DATA-VAL': 0
-    }
-y_true, y_pred, preds=prediction(metadata=wbc_metadata, source_domains=['WBC1'], label_map=label_map_pred)
-outputdata=wbc_metadata.drop(columns=['file', 'label', 'dataset', 'set', 'mean1', 'mean2', 'mean3'])
-outputdata['Label']=y_pred
-outputdata['LabelID']=preds
-'''
-for i in range(len(y_pred)):
-    outputdata['LabelID'].loc[i]=y_pred[i]
-    outputdata['Label'].loc[i]=label_map_reverse[y_pred[i]]
-'''
-outputdata.to_csv('submission_12_caug.csv')
-print(outputdata)
+    label_map_pred = {
+            'DATA-VAL': 0
+        }
+    y_true, y_pred, preds=prediction(metadata=wbc_metadata, model=model,
+                                     source_domains=['WBC1'], label_map=label_map_pred)
+    outputdata=wbc_metadata.drop(columns=['file', 'label', 'dataset', 'set', 'mean1', 'mean2', 'mean3'])
+    outputdata['Label']=y_pred
+    outputdata['LabelID']=preds
+    '''
+    for i in range(len(y_pred)):
+        outputdata['LabelID'].loc[i]=y_pred[i]
+        outputdata['Label'].loc[i]=label_map_reverse[y_pred[i]]
+    '''
+    outputdata.to_csv(save_path + '.csv')
+    print(outputdata)
+    
+if __name__ == "__main__":
+    create_submisssion()
