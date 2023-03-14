@@ -98,8 +98,10 @@ def main(n_rotation, n_filters, flip, num_class, save_path, model_type, epoch,
                                      )
 
     train_data_len = len(train_dataset)
-    train_dataset = torch.utils.data.random_split(train_dataset, 
-                                                   lengths=int(split_size*train_data_len))
+    train_split_size = int(split_size*train_data_len)
+    remain_split_size = abs(train_data_len - train_split_size)
+    train_dataset,_ = torch.utils.data.random_split(train_dataset, 
+                                                   lengths=(train_split_size, remain_split_size))
     print(f"length of tr:{train_data_len}, but using {len(train_dataset)}")
     
     train_loader = DataLoader(
