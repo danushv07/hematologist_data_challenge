@@ -181,7 +181,7 @@ def main(n_rotation, n_filters, flip, num_class, save_path, model_type, epoch,
 
         #validation       
         model.eval()
-        with tqdm(test_loader) as vepoch: 
+        with tqdm(valid_loader) as vepoch: 
             for i, data in enumerate(vepoch):
                 vepoch.set_description(f"Validation {epoch+1}")
 
@@ -227,7 +227,33 @@ def main(n_rotation, n_filters, flip, num_class, save_path, model_type, epoch,
 
 
     print('Finished Training')
-    
+    model.eval()
+    with torch.no_grad():
+        with tqdm(test_loader) as vepoch: 
+            for i, data in enumerate(vepoch):
+                vepoch.set_description(f"Validation {epoch+1}")
+
+                x, y = data
+                x, y = x.to(device), y.to(device)
+
+                out = model(x)
+                loss = criterion(out, y)
+
+                logits = torch.softmax(out.detach(), dim=1)
+                predictions = logits.argmax(dim=1)
+                y_pred=torch.cat((y_pred, predictions), 0)
+                y_true=torch.cat((y_true, y), 0)
+
+                acc = accuracy_score(y_true.cpu(), y_pred.cpu())
+
+                loss_running+=(loss.item()*len(y))
+                acc_running+=(acc.item()*len(y))
+                val_batches+=len(y)
+                loss_mean=loss_running/val_batches
+                acc_mean=acc_running/val_batches
+
+                vepoch.set_postfix(loss=loss_mean, accuracy=acc_mean)
+                
     print('running eval')
     
     metadata_test=dataframe.loc[test_index,:]
