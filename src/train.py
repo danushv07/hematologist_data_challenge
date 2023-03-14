@@ -228,6 +228,18 @@ def main(n_rotation, n_filters, flip, num_class, save_path, model_type, epoch,
 
     print('Finished Training')
     
+    print('running eval')
+    
+    metadata_test=dataframe.loc[test_index,:]
+    ace_metadata_test=metadata_test.loc[metadata_test['dataset']=='Ace_20'].reset_index(drop = True)
+    mat_metadata_test=metadata_test.loc[metadata_test['dataset']=='Mat_19'].reset_index(drop = True)
+    
+    y_true, y_pred, preds=prediction(metadata= ace_metadata_test, source_domains=['Ace_20'])
+    classification_complete_report(y_true, y_pred, labels=label_list_all, name=f"{model_save_path}_ace.png")
+    
+    y_true, y_pred, preds=prediction(metadata= mat_metadata_test, source_domains=['Mat_19'])
+    classification_complete_report(y_true, y_pred, labels=label_list_all, name=f"{model_save_path}_mat.png")
+    
 if __name__ == "__main__":
     main()
     
