@@ -96,7 +96,8 @@ label_map_pred = {
 # read the files and pre-processed mean from the file "metadata.csv"
 metadata = pd.read_csv('./metadata.csv')
 example_metadata=metadata
-source_domains=['Ace_20', 'Mat_19']
+#source_domains=['Ace_20', 'Mat_19']
+source_domains=['Ace_20']
 source_index = example_metadata.dataset.isin(source_domains)
 example_metadata = example_metadata.loc[source_index,:].copy().reset_index(drop = True)
 
