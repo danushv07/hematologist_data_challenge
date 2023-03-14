@@ -62,8 +62,11 @@ from data_load import *
               help="the batch size of the dataloader")
 @click.option('-lr', '--learn_rate', type=float, default=1e-5,
               help="the learning rate of the training function")
+@click.option('-ss', '--split_size', type=float, default=1.0,
+              help="the fraction of training data to use")
 def main(n_rotation, n_filters, flip, num_class, save_path, model_type, epoch, 
-         ace_path, mat_path, test_frac, val_frac, batch_size, learn_rate):
+         ace_path, mat_path, test_frac, val_frac, batch_size, learn_rate,
+        split_size):
 
     data_path = {
             "Ace_20": ace_path, # Acevedo_20 Dataset
@@ -94,6 +97,10 @@ def main(n_rotation, n_filters, flip, num_class, save_path, model_type, epoch,
                                      transform = test_transform,
                                      )
 
+    train_data_len = len(train_dataset)
+    train_dataset = torch.utils.data.RandomSampler(train_dataset, replacement=False, 
+                                                   num_samples=int(split_size*train_data_len))
+    print(f"length of tr:{train_data_len}, but using {len(train_dataset)}")
     
     train_loader = DataLoader(
         train_dataset, batch_size=batch_size, shuffle=True)
